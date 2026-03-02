@@ -6,7 +6,7 @@ import json
 import logging
 import urllib.request
 import urllib.error
-from typing import Dict, Optional, Tuple
+from typing import Dict
 
 from config import (
     AI_PROVIDER, OPENAI_API_KEY, OPENAI_MODEL,
@@ -180,5 +180,5 @@ class AIAgent:
             if result in ("positive", "negative", "neutral"):
                 return result
             return "neutral"
-        except:
+        except Exception:
             return "neutral"

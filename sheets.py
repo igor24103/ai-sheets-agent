@@ -2,9 +2,8 @@
 Google Sheets Manager
 Handles all read/write operations with Google Sheets API v4
 """
-import json
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -91,9 +90,7 @@ class SheetsManager:
         for col_name, value in values.items():
             if col_name in headers:
                 col_index = headers.index(col_name)
-                col_letter = chr(65 + col_index)  # A=0, B=1, ...
-                if col_index > 25:
-                    col_letter = chr(64 + col_index // 26) + chr(65 + col_index % 26)
+                col_letter = self._col_letter(col_index)
                 self.update_cell(sheet_name, f"{col_letter}{row_number}", str(value))
 
     def append_row(self, sheet_name: str, values: List[str]):
@@ -130,12 +127,20 @@ class SheetsManager:
         except HttpError as e:
             logger.error(f"Error writing analytics: {e}")
 
+    @staticmethod
+    def _col_letter(index: int) -> str:
+        """Convert 0-based column index to Excel-style letter (A, B, ..., Z, AA, AB, ...)"""
+        result = ""
+        while index >= 0:
+            result = chr(65 + index % 26) + result
+            index = index // 26 - 1
+        return result
+
     def ensure_headers(self, sheet_name: str, headers: List[str]):
         """Ensure the first row has the correct headers"""
         existing = self.read_rows(sheet_name, "1:1")
         if not existing or not existing[0]:
-            self.update_cell(sheet_name, "A1", headers[0])
             for i, h in enumerate(headers):
-                col_letter = chr(65 + i)
+                col_letter = self._col_letter(i)
                 self.update_cell(sheet_name, f"{col_letter}1", h)
             logger.info(f"Headers created in '{sheet_name}'")
